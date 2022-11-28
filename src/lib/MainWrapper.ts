@@ -2,6 +2,7 @@ import {ParentLogger} from "./logger/ParentLogger";
 import {Script} from "./scripts/Script";
 import {ScriptCommunicationRouter} from "./scripts/ScriptCommunicationRouter";
 import {BaseScriptCommunicationHandler} from "./scripts/BaseScriptCommunicationHandler";
+import {readdir} from "fs/promises";
 
 export class MainWrapper {
     private static _instance: MainWrapper;
@@ -12,7 +13,7 @@ export class MainWrapper {
     constructor() {
         this._logger = new ParentLogger();
         this._scr = new ScriptCommunicationRouter();
-        this._scripts = [];
+        this._scripts = ["bot.ts"].map((file) => new Script(file, 'bot'));
     }
 
     static get instance(): MainWrapper {
@@ -30,24 +31,21 @@ export class MainWrapper {
         return this._scripts;
     }
 
-    start() {
-        this._logger.info("Starting MainWrapper...");
+    private async blockingChores(type: 'pre-run' | 'post-run') {
+        this._logger.info("Running " + type + " chores...");
+        let files = await readdir("chores/" + type);
+        for (let file of files) {
+            let script = new Script("chores/" + type + "/" + file, 'chore');
+            await script.start();
+            this._scr.handleScript(script);
+            await script.blockUntilDone();
+        }
+    }
 
-        this._logger.debug("Adding ScriptCommunicationHandler; ParentLogger...");
-        this._scr.addHandler(this._logger);
-        this._logger.debug("Adding Custom ScriptCommunicationHandler; BotKeepAlive...");
-        //todo
-
-        this._logger.debug("Adding scripts...");
-        [
-            new Script("bot.ts", "bot"),
-        ].forEach((s) => {
-            this._scripts.push(s);
-        });
-        this._logger.debug("Starting scripts...");
-        this._scripts.forEach((script) => {
-            this._logger.debug("Starting script " + script.path);
-            script.start();
+    private async main() {
+        this._logger.info("Starting main...");
+        for (let script of this._scripts) {
+            await script.start();
             if (script.type === "bot") {
                 let restart = (code: number, signal: any) => {
                     if (code === 0) {
@@ -61,7 +59,22 @@ export class MainWrapper {
                 script.childProcess?.on("exit", restart);
             }
             this._scr.handleScript(script);
-        });
+            await script.blockUntilDone();
+        }
+    }
+
+    async start() {
+        this._logger.info("Starting MainWrapper...");
+
+        this._logger.debug("Adding ScriptCommunicationHandler; ParentLogger...");
+        this._scr.addHandler(this._logger);
+
+        await this.blockingChores('pre-run');
+        this.main()
+            .then(r => {
+                this._logger.info("MainWrapper finished.");
+            });
+
         this._logger.info("MainWrapper started.");
     }
 }
