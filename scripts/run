@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. scripts/lib
+
+# build
+. scripts/build
+
+OLDWD=$(pwd)
+revenv() {
+  debug "revenv: $(pwd) -> $OLDWD"
+  silrun cd "$OLDWD"
+}
+
+trap revenv EXIT
+trap revenv INT
+
+# run
+log "running..."
+silrun cd ./dist
+[ -d debug ] || silrun mkdir debug
+run node --report-dir=debug ./index.js

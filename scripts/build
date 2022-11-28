@@ -1,0 +1,6 @@
+#!/bin/sh
+
+. scripts/lib
+
+log "building..."
+run tsc

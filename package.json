@@ -1,0 +1,34 @@
+{
+  "name": "algobot",
+  "version": "1.0.0",
+  "description": "AlgoBot, a better Discord bot.",
+  "main": "dist/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "scripts/ci"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faultydev/algobot.git"
+  },
+  "keywords": [
+    "discord",
+    "free",
+    "bot",
+    "mee7"
+  ],
+  "author": "Didier <dev@faulty.nl>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/faultydev/algobot/issues"
+  },
+  "homepage": "https://github.com/faultydev/algobot#readme",
+  "dependencies": {
+    "discord.js": "^14.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9"
+  }
+}

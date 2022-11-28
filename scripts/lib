@@ -1,0 +1,62 @@
+#!/bin/sh
+
+STRICT=${STRICT:-no}
+VERBOSE=${VERBOSE:-no}
+
+LIC=$((LIC+1))
+
+# START FUNCTION DECLARATIONS
+
+bool() {
+  case "$1" in
+  true | yes | on | 1) return 0 ;;
+  false | no | off | 0) return 1 ;;
+  *) return 2 ;;
+  esac
+}
+
+run() {
+  # -s = don't print command
+  # -S = don't print command or output (except on error)
+  [ "$1" = "-s" ] && shift || echo "$@"
+  if [ "$1" = "-S" ]; then
+    shift
+    "$@" >/dev/null 2>&1 || "$@"
+  else
+    "$@"
+  fi
+}
+
+silrun () {
+  run -s -S "$@"
+}
+
+log() {
+  echo "# $*"
+}
+
+debug() {
+  bool "$VERBOSE" && log "DEBUG: $*"
+}
+
+fatal() {
+  log "FATAL: $*"
+  exit 1
+}
+
+# END FUNC DECLARATIONS
+
+# START CHECKS
+
+debug "LIC: $LIC"
+
+if [ "$LIC" -gt 1 ]; then
+  debug "LIC > 1: skip inc"
+else
+  [ ! -f scripts/lib ] && fatal "please run from root of repository"
+  [ "$0" = "./scripts/lib" ] && fatal "lib is not meant to be run directly"
+  if bool "$STRICT"; then
+    # shellcheck disable=SC2039
+    set -euo pipefail
+  fi
+fi
