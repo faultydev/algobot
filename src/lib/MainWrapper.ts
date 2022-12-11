@@ -3,16 +3,20 @@ import {Script} from "./scripts/Script";
 import {ScriptCommunicationRouter} from "./scripts/ScriptCommunicationRouter";
 import {BaseScriptCommunicationHandler} from "./scripts/BaseScriptCommunicationHandler";
 import {readdir} from "fs/promises";
+import {EnvironHandler} from "./util/EnvironHandler";
+import {SnowflakeFactory} from "./util/SnowflakeFactory";
 
 export class MainWrapper {
     private static _instance: MainWrapper;
-    private _logger: ParentLogger;
     private _scr: ScriptCommunicationRouter;
     private _scripts: Script[];
+    private _logger: ParentLogger;
+    private _snowflakeFactory: SnowflakeFactory;
 
     constructor() {
         this._logger = new ParentLogger();
         this._scr = new ScriptCommunicationRouter();
+        this._snowflakeFactory = new SnowflakeFactory(0);
         this._scripts = ["bot.ts"].map((file) => new Script(file, 'bot'));
     }
 
@@ -29,6 +33,10 @@ export class MainWrapper {
 
     get scripts(): Script[] {
         return this._scripts;
+    }
+
+    get snowflakeFactory(): SnowflakeFactory {
+        return this._snowflakeFactory;
     }
 
     private async blockingChores(type: 'pre-run' | 'post-run') {
@@ -68,6 +76,7 @@ export class MainWrapper {
 
         this._logger.debug("Adding ScriptCommunicationHandler; ParentLogger...");
         this._scr.addHandler(this._logger);
+        this._scr.addHandler(new EnvironHandler());
 
         await this.blockingChores('pre-run');
         this.main()
